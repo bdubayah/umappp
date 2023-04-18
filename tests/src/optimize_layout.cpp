@@ -1,5 +1,9 @@
 #include <gtest/gtest.h>
 
+#ifndef TEST_NUM_THREADS
+#define TEST_NUM_THREADS 3
+#endif
+
 #ifdef TEST_CUSTOM_PARALLEL
 // Define before umappp includes.
 #include "custom_parallel.h"
@@ -96,21 +100,26 @@ TEST_P(OptimizeTest, RestartedRun) {
     EXPECT_EQ(embedding, embedding2);
 }
 
-TEST_P(OptimizeTest, Batched) {
+TEST_P(OptimizeTest, ParallelRun) {
     assemble(GetParam());
     auto epoch = umappp::similarities_to_epochs(stored, 500, 5.0);
-    auto original = epoch;
+    auto epoch2 = epoch;
 
     std::vector<double> embedding(data);
-    umappp::optimize_layout_batched<>(5, embedding.data(), epoch, 2.0, 1.0, 1.0, 1.0, std::mt19937_64(10), [](uint64_t s) -> auto { return std::mt19937_64(s); }, 0, 1);
+    {
+        std::mt19937_64 rng(100);
+        umappp::optimize_layout<>(5, embedding.data(), epoch, 2.0, 1.0, 1.0, 1.0, rng, 0);
+    }
 
-    // some kind of change happened!
-    EXPECT_NE(embedding, data); 
-
-    // Same result with multiple threads.
+    // Trying with more threads.
     std::vector<double> embedding2(data);
-    umappp::optimize_layout_batched<>(5, embedding2.data(), original, 2.0, 1.0, 1.0, 1.0, std::mt19937_64(10), [](uint64_t s) -> auto { return std::mt19937_64(s); }, 0, 3);
-    EXPECT_EQ(embedding, embedding2);
+    {
+        std::mt19937_64 rng(100);
+        umappp::optimize_layout_parallel<>(5, embedding2.data(), epoch2, 2.0, 1.0, 1.0, 1.0, rng, 0, TEST_NUM_THREADS);
+    }
+
+    EXPECT_NE(data, embedding); // some kind of change happened!
+    EXPECT_EQ(embedding, embedding2); 
 }
 
 INSTANTIATE_TEST_SUITE_P(
