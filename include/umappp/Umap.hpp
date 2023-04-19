@@ -498,7 +498,7 @@ public:
      * otherwise, it is filled with initial coordinates.
      */
     Status initialize(NeighborList<Float> x, int ndim, Float* embedding) const {
-        neighbor_similarities(x, local_connectivity, bandwidth);
+        neighbor_similarities(x, local_connectivity, bandwidth, rparams.nthreads);
         combine_neighbor_sets(x, mix_ratio);
 
         // Choosing the manner of initialization.
@@ -548,7 +548,7 @@ public:
 
 #ifndef UMAPPP_CUSTOM_PARALLEL
         #pragma omp parallel for num_threads(rparams.nthreads)
-        for (size_t i = 0; i < N; ++i) {
+        for (int i = 0; i < static_cast<int>(N); ++i) {
 #else
         UMAPPP_CUSTOM_PARALLEL(N, [&](size_t first, size_t last) -> void {
         for (size_t i = first; i < last; ++i) {

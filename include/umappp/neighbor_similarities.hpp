@@ -16,6 +16,7 @@ void neighbor_similarities(
     NeighborList<Float>& x, 
     Float local_connectivity = 1.0, 
     Float bandwidth = 1.0,
+    int nthreads = 1,
     int max_iter = 64, 
     Float tol = 1e-5, 
     Float min_k_dist_scale = 1e-3
@@ -23,12 +24,12 @@ void neighbor_similarities(
     Float grand_mean_dist = -1;
     constexpr Float max_val = std::numeric_limits<Float>::max();
 
-    #pragma omp parallel
+    #pragma omp parallel num_threads(nthreads)
     {
         std::vector<Float> non_zero_distances;
         
         #pragma omp for
-        for (size_t i = 0; i < x.size(); ++i) {
+        for (int i = 0; i < static_cast<int>(x.size()); ++i) {
             auto& all_neighbors = x[i];
             const int n_neighbors = all_neighbors.size();
 

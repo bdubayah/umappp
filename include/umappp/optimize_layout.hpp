@@ -251,7 +251,7 @@ inline void optimize_layout_batched(
         {
             std::vector<Float> buffer(ndim);
             #pragma omp for
-            for (size_t i = 0; i < setup.head.size(); ++i) {
+            for (int i = 0; i < static_cast<int>(setup.head.size()); ++i) {
 #else
         UMAPPP_CUSTOM_PARALLEL(setup.head.size(), [&](size_t first, size_t last) -> void {
             std::vector<Float> buffer(ndim);
